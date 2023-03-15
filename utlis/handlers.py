@@ -16,6 +16,8 @@ with open('distrbuter_abi.json', 'r') as f:
     distrbuter_abi = json.load(f)
 with open('bep20_abi.json', 'r') as f:
     bep20_abi = json.load(f)
+with open('bdfABI.json', 'r') as f:
+    bdfABI = json.load(f)
 
 
 distrbuterAddress = web3.toChecksumAddress(DISTRBUTER_ADDRESS)
@@ -24,7 +26,7 @@ bdfAddress = web3.toChecksumAddress(BDF_ADDRESS)
 
 distrbuterContract = web3.eth.contract(address=distrbuterAddress, abi=distrbuter_abi)
 busdContract = web3.eth.contract(address=busdAddress, abi=bep20_abi)
-bdfContract = web3.eth.contract(address=bdfAddress, abi=bep20_abi)
+bdfContract = web3.eth.contract(address=bdfAddress, abi=bdfABI)
 
 
 def start(update: Update, context: CallbackContext):
@@ -115,17 +117,25 @@ def distrbuterBUSD(update: Update, context: CallbackContext):
 
 def totalBDFBurned(update: Update, context: CallbackContext):
     try:
-        deadbdfbalance = bdfContract.functions.balanceOf(web3.toChecksumAddress("0x000000000000000000000000000000000000dead")).call()
-        nullbdfbalance = bdfContract.functions.balanceOf(web3.toChecksumAddress("0x0000000000000000000000000000000000000000")).call()
-        totalburned = deadbdfbalance + nullbdfbalance
-        totalburned /= 10 ** 9
-        totalsupply = 1000000000000000
+        totalSupply = bdfContract.functions.totalSupply().call()
+        totalSupply /= 10 ** 9
+        circulatingSupply = bdfContract.functions.getCirculatingSupply().call()
+        circulatingSupply /= 10 ** 9
+        totalburned = totalSupply - circulatingSupply
         text = f"""
+<b>Total BDF Supply</b>
+    <b>BDF:</b> {"{:,.2f}".format(totalSupply)}
+
 <b>Total BDF Burned</b>
     <b>BDF:</b> {"{:,.2f}".format(totalburned)}
-    <b>{"{:,.2%}".format(totalburned/totalsupply)} Of TotalSupply</b>
+    <b>{"{:,.2%}".format(totalburned/totalSupply)} Of TotalSupply</b>
+    
+<b>BDF Circulating Supply</b>
+    <b>BDF:</b> {"{:,.2f}".format(circulatingSupply)}
+    <b>{"{:,.2%}".format(circulatingSupply/totalSupply)} Of TotalSupply</b>
 """
-    except:
+    except Exception as e:
+        print(e)
         text = "Error: Please try again"
     update.message.reply_text(
         text=text,
