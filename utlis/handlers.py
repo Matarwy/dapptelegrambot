@@ -98,8 +98,6 @@ Then click claim rewards
     )
 
 
-
-
 def distrbuterBUSD(update: Update, context: CallbackContext):
     try:
         text = f"""
